@@ -16,7 +16,6 @@
                 <img src="image/Ubu_logo.png" alt="Nubmanut Logo">
             </div>
             <h1>ระบบนับจำนวนคนอัจฉริยะ</h1>
-            <p>ลากจุดบนเส้นสีเหลืองเพื่อกำหนดตำแหน่งนับ</p>
         </header>
 
         <div class="main-content">
@@ -44,6 +43,21 @@
                 <div class="control-group">
                     <label for="camera-select">เลือกกล้อง / สลับกล้อง</label>
                     <select id="camera-select" class="styled-select"></select>
+                </div>
+
+                <div class="control-group">
+                    <label>แนวเส้น & ทิศทางการนับ</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="line-axis-select" class="styled-select" style="flex: 1;">
+                            <option value="vertical">เส้นแนวตั้ง</option>
+                            <option value="horizontal">เส้นแนวนอน</option>
+                        </select>
+                        <select id="count-direction-select" class="styled-select" style="flex: 1;">
+                            <option value="both">ทั้งสองทาง</option>
+                            <option value="forward" id="dir-forward-label">ซ้ายไปขวา</option>
+                            <option value="backward" id="dir-backward-label">ขวาไปซ้าย</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="control-group">

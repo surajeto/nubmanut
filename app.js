@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // New UI Elements
     const cameraSelect = document.getElementById('camera-select');
+    const lineAxisSelect = document.getElementById('line-axis-select');
+    const countDirectionSelect = document.getElementById('count-direction-select');
+    const dirForwardLabel = document.getElementById('dir-forward-label');
+    const dirBackwardLabel = document.getElementById('dir-backward-label');
     const startTimeInput = document.getElementById('start-time');
     const endTimeInput = document.getElementById('end-time');
     
@@ -40,10 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const MAX_INACTIVE_FRAMES = 10;
     const DISTANCE_THRESHOLD = 80;
 
-    // Line state 
-    let countLine = { p1: { x: 0.2, y: 0.5 }, p2: { x: 0.8, y: 0.5 } };
-    let draggingPoint = null; 
-    const POINT_RADIUS = 15;
+    // Line state is now fixed based on UI selection
 
     // Get Cameras
     async function getCameras() {
@@ -101,6 +102,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         resizeCanvas();
         video.play();
         isDetecting = true;
+    });
+
+    lineAxisSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'vertical') {
+            dirForwardLabel.textContent = 'ซ้ายไปขวา';
+            dirBackwardLabel.textContent = 'ขวาไปซ้าย';
+        } else {
+            dirForwardLabel.textContent = 'บนลงล่าง';
+            dirBackwardLabel.textContent = 'ล่างขึ้นบน';
+        }
     });
 
     // Load Model
@@ -220,11 +231,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                 trackId = bestMatchId;
 
                 if (isCounting) {
-                    const lineA = { x: countLine.p1.x * canvas.width, y: countLine.p1.y * canvas.height };
-                    const lineB = { x: countLine.p2.x * canvas.width, y: countLine.p2.y * canvas.height };
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+                    let lineA, lineB;
+
+                    if (lineAxisSelect.value === 'vertical') {
+                        lineA = { x: cx, y: 0 };
+                        lineB = { x: cx, y: canvas.height };
+                    } else {
+                        lineA = { x: 0, y: cy };
+                        lineB = { x: canvas.width, y: cy };
+                    }
                     
                     if (intersects(prev, curr, lineA, lineB)) {
-                        if (!countedIds.has(trackId)) {
+                        let isDirectionMatch = false;
+                        const direction = countDirectionSelect.value;
+                        if (lineAxisSelect.value === 'vertical') {
+                            if (direction === 'both') isDirectionMatch = true;
+                            else if (direction === 'forward') isDirectionMatch = prev.x < curr.x;
+                            else if (direction === 'backward') isDirectionMatch = prev.x > curr.x;
+                        } else {
+                            if (direction === 'both') isDirectionMatch = true;
+                            else if (direction === 'forward') isDirectionMatch = prev.y < curr.y;
+                            else if (direction === 'backward') isDirectionMatch = prev.y > curr.y;
+                        }
+
+                        if (isDirectionMatch && !countedIds.has(trackId)) {
                             count++;
                             crossingLogs.push({ "Person Number": count, "Crossing Time": new Date().toLocaleTimeString() });
                             countDisplay.textContent = count;
@@ -257,10 +289,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     function drawOverlay(currentCentroids) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const lx1 = countLine.p1.x * canvas.width;
-        const ly1 = countLine.p1.y * canvas.height;
-        const lx2 = countLine.p2.x * canvas.width;
-        const ly2 = countLine.p2.y * canvas.height;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        let lx1, ly1, lx2, ly2;
+
+        if (lineAxisSelect.value === 'vertical') {
+            lx1 = cx; ly1 = 0;
+            lx2 = cx; ly2 = canvas.height;
+        } else {
+            lx1 = 0; ly1 = cy;
+            lx2 = canvas.width; ly2 = cy;
+        }
 
         ctx.beginPath();
         ctx.moveTo(lx1, ly1);
@@ -270,9 +309,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         ctx.setLineDash([10, 10]);
         ctx.stroke();
         ctx.setLineDash([]);
-
-        drawPoint(lx1, ly1, draggingPoint === 'p1');
-        drawPoint(lx2, ly2, draggingPoint === 'p2');
 
         currentCentroids.forEach(cent => {
             let color = '#fff';
@@ -301,50 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    function drawPoint(x, y, isHovered) {
-        ctx.beginPath();
-        ctx.arc(x, y, POINT_RADIUS, 0, 2 * Math.PI);
-        ctx.fillStyle = isHovered ? '#fff' : 'var(--line-color)';
-        ctx.fill();
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    }
 
-    canvas.addEventListener('mousedown', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const lx1 = countLine.p1.x * canvas.width;
-        const ly1 = countLine.p1.y * canvas.height;
-        const lx2 = countLine.p2.x * canvas.width;
-        const ly2 = countLine.p2.y * canvas.height;
-
-        if (getDistance({x: mouseX, y: mouseY}, {x: lx1, y: ly1}) < POINT_RADIUS + 10) {
-            draggingPoint = 'p1';
-        } else if (getDistance({x: mouseX, y: mouseY}, {x: lx2, y: ly2}) < POINT_RADIUS + 10) {
-            draggingPoint = 'p2';
-        }
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-        if (!draggingPoint) return;
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const relX = Math.max(0, Math.min(1, mouseX / canvas.width));
-        const relY = Math.max(0, Math.min(1, mouseY / canvas.height));
-
-        if (draggingPoint === 'p1') { countLine.p1 = { x: relX, y: relY }; } 
-        else { countLine.p2 = { x: relX, y: relY }; }
-        
-        if (!isDetecting) drawOverlay([]);
-    });
-
-    canvas.addEventListener('mouseup', () => draggingPoint = null);
-    canvas.addEventListener('mouseleave', () => draggingPoint = null);
 
     fpsInput.addEventListener('input', (e) => {
         fpsValue.textContent = `${e.target.value} FPS`;
