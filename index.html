@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>People Counter WebApp</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand-logo">
+                <span>Nubmanut</span>
+                <img src="image/Ubu_logo.png" alt="Nubmanut Logo">
+            </div>
+            <h1>ระบบนับจำนวนคนอัจฉริยะ</h1>
+            <p>ลากจุดบนเส้นสีเหลืองเพื่อกำหนดตำแหน่งนับ</p>
+        </header>
+
+        <div class="main-content">
+            <div class="video-wrapper">
+                <video id="webcam" autoplay playsinline muted></video>
+                <canvas id="overlay"></canvas>
+                <div id="loading" class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>กำลังโหลดโมเดล AI...</p>
+                </div>
+            </div>
+
+            <div class="controls glass-panel">
+                <div class="stats">
+                    <div class="stat-box">
+                        <span class="label">จำนวนคนที่นับได้</span>
+                        <span class="value" id="count-display">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">สถานะ / เวลา</span>
+                        <span class="value" id="time-display" style="font-size: 1.2rem;">--:--</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="camera-select">เลือกกล้อง / สลับกล้อง</label>
+                    <select id="camera-select" class="styled-select"></select>
+                </div>
+
+                <div class="control-group">
+                    <label>ตั้งเวลาเริ่ม - สิ้นสุด</label>
+                    <div class="time-range">
+                        <input type="time" id="start-time" value="08:00" required>
+                        <span>ถึง</span>
+                        <input type="time" id="end-time" value="18:00" required>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="fps-input">FPS (ความเร็วการตรวจจับ)</label>
+                    <input type="range" id="fps-input" min="1" max="30" value="15">
+                    <span id="fps-value">15 FPS</span>
+                </div>
+
+                <div class="button-group">
+                    <button id="start-btn" class="btn primary">เริ่มนับ</button>
+                    <button id="stop-btn" class="btn danger" disabled>หยุด</button>
+                    <button id="reset-btn" class="btn secondary">รีเซ็ต</button>
+                    <button id="export-pdf-btn" class="btn" style="background:#dc2626; grid-column: 1;">Export PDF</button>
+                    <button id="export-excel-btn" class="btn" style="background:#16a34a; grid-column: 2;">Export Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
